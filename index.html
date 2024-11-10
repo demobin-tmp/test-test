@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Answer Selector</title>
+    <style>
+        .color-bar-container {
+            width: 100%;
+            height: 50px; /* Height of the bar */
+            position: relative;
+        }
+
+        .foreground, .background {
+            display: flex;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+
+        .color-section {
+            height: 100%;
+            transition: flex 0.3s ease, width 0.3s ease; /* Smooth transition for width changes */
+        }
+
+        /* Foreground sections */
+        .foreground {
+            opacity: 1; /* Initial opacity 100% */
+            transition: opacity 0.3s ease; /* Smooth transition for opacity changes */
+        }
+
+        .foreground .left, .foreground .right {
+            background-color: lightblue; /* Same color for left and right sections in foreground */
+        }
+
+        .foreground .color2 {
+            background-color: blue; /* Middle section for selecting answer */
+            width: 1%; /* Middle section width */
+            flex-shrink: 0;
+            position: absolute;
+            cursor: grab; /* Indicate draggable section */
+        }
+
+        .foreground .color2:active {
+            cursor: grabbing; /* Indicate dragging action */
+        }
+
+        /* Background sections */
+        .background {
+            pointer-events: none; /* Ignore clicks */
+            z-index: -1; /* Place behind the foreground */
+        }
+
+        .background .color1, .background .color3 {
+            background-color: lightblue; /* Same color for left and right sections in background */
+        }
+
+        .background .color2 {
+            background-color: green; /* Correct answer indication */
+            width: 1%; /* Middle section width */
+            flex-shrink: 0;
+            position: absolute;
+            display: none; /* Hide initially */
+        }
+
+        .submit-button {
+            margin-top: 20px; /* Add some space above the button */
+        }
+    </style>
+</head>
+<body>
+
+<div class="color-bar-container">
+    <!-- Background sections (indicator of the correct answer) -->
+    <div class="background">
+        <div class="color-section color1"></div>
+        <div class="color-section color2" id="correctAnswer"></div>
+        <div class="color-section color3"></div>
+    </div>
+
+    <!-- Foreground sections (user's answer selector) -->
+    <div class="foreground" id="barContainer">
+        <div class="color-section left" id="leftSection"></div>
+        <div class="color-section color2" id="middleSection"></div>
+        <div class="color-section right" id="rightSection"></div>
+    </div>
+</div>
+
+<!-- Button to reveal the correct answer -->
+<button class="submit-button" id="submitButton" onclick="submitAnswer()">Submit Answer</button>
+
+<script>
+    let isDragging = false;
+    let isSubmitted = false;
+
+    document.getElementById("barContainer").addEventListener("mousedown", function(event) {
+        if (!isSubmitted) {
+            isDragging = true;
+            moveMiddleSection(event);
+        }
+    });
+
+    document.getElementById("barContainer").addEventListener("touchstart", function(event) {
+        if (!isSubmitted) {
+            isDragging = true;
+            moveMiddleSection(event.touches[0]);
+        }
+    });
+
+    document.addEventListener("mousemove", function(event) {
+        if (isDragging) {
+            moveMiddleSection(event);
+        }
+    });
+
+    document.addEventListener("touchmove", function(event) {
+        if (isDragging) {
+            moveMiddleSection(event.touches[0]);
+        }
+    });
+
+    document.addEventListener("mouseup", function() {
+        isDragging = false;
+    });
+
+    document.addEventListener("touchend", function() {
+        isDragging = false;
+    });
+
+    function moveMiddleSection(event) {
+        var rect = document.getElementById("barContainer").getBoundingClientRect();
+        var clickPosition = event.clientX - rect.left; // X coordinate within the container
+        var containerWidth = rect.width;
+
+        var middleWidth = containerWidth * 0.01; // Width of the middle section (1% of container width)
+        var leftWidth = clickPosition - (middleWidth / 2);
+        var rightWidth = containerWidth - leftWidth - middleWidth;
+
+        if (leftWidth < 0) {
+            leftWidth = 0;
+            rightWidth = containerWidth - middleWidth;
+        } else if (rightWidth < 0) {
+            rightWidth = 0;
+            leftWidth = containerWidth - middleWidth;
+        }
+
+        document.getElementById("leftSection").style.width = leftWidth + 'px';
+        document.getElementById("rightSection").style.width = rightWidth + 'px';
+        document.getElementById("middleSection").style.left = leftWidth + 'px';
+    }
+
+    function initializeBar() {
+        var rect = document.getElementById("barContainer").getBoundingClientRect();
+        var containerWidth = rect.width;
+        var middleWidth = containerWidth * 0.01; // Width of the middle section (1% of container width)
+        var leftWidth = (containerWidth - middleWidth) / 2;
+        var rightWidth = leftWidth;
+
+        document.getElementById("leftSection").style.width = leftWidth + 'px';
+        document.getElementById("rightSection").style.width = rightWidth + 'px';
+        document.getElementById("middleSection").style.left = leftWidth + 'px';
+    }
+
+    function submitAnswer() {
+        var foreground = document.querySelector('.foreground');
+        foreground.style.opacity = 0.5; // Change opacity to 50%
+        isSubmitted = true; // Disable further interactions
+
+        var correctAnswer = document.getElementById("correctAnswer");
+        correctAnswer.style.display = "block"; // Reveal the correct answer
+
+        // Randomly position the correct answer
+        var rect = document.getElementById("barContainer").getBoundingClientRect();
+        var containerWidth = rect.width;
+        var middleWidth = containerWidth * 0.01; // Width of the middle section (1% of container width)
+        var randomLeft = Math.random() * (containerWidth - middleWidth);
+        correctAnswer.style.left = randomLeft + 'px';
+
+        // Disable the submit button
+        var submitButton = document.getElementById("submitButton");
+        submitButton.disabled = true;
+    }
+
+    // Initialize the bar on page load
+    window.onload = initializeBar;
+</script>
+
+</body>
+</html>
